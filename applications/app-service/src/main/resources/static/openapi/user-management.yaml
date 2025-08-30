@@ -1,0 +1,111 @@
+openapi: 3.0.3
+info:
+  title: Autenticacion - Registro de Usuarios
+  version: 1.0.0
+servers:
+  - url: http://localhost:8082
+paths:
+  /api/v1/users:
+    post:
+      tags:
+        - AUTENTICACION
+      summary: Registrar un nuevo usuario en el sistema
+      description: Permite registrar un nuevo usuario proporcionando sus datos personales básicos. Valida campos obligatorios, formato de email, unicidad y rango de salario.
+      operationId: registrarUsuario
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UsuarioRequest'
+            examples:
+              ejemploValido:
+                value:
+                  nombres: Juan
+                  apellidos: Pérez
+                  fecha_nacimiento: "1990-01-01"
+                  direccion: "Av. Siempre Viva 123"
+                  telefono: "+51987654321"
+                  correo_electronico: "juan.perez@example.com"
+                  salario_base: 1500
+      responses:
+        '201':
+          description: Usuario creado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsuarioResponse'
+        '400':
+          description: Error de validación
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                emailInvalido:
+                  value:
+                    errores:
+                      - codigo: EMAIL_INVALIDO
+                        campo: correo_electronico
+                        mensaje: Formato de correo inválido
+                salarioFueraDeRango:
+                  value:
+                    errores:
+                      - codigo: SALARIO_FUERA_DE_RANGO
+                        campo: salario_base
+                        mensaje: Salario fuera de rango
+                emailDuplicado:
+                  value:
+                    errores:
+                      - codigo: EMAIL_DUPLICADO
+                        campo: correo_electronico
+                        mensaje: El correo ya está registrado
+        '500':
+          description: Error interno del servidor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+components:
+  schemas:
+    UsuarioRequest:
+      type: object
+      required: [nombres, apellidos, correo_electronico, salario_base]
+      properties:
+        nombres: { type: string, minLength: 1 }
+        apellidos: { type: string, minLength: 1 }
+        fecha_nacimiento: { type: string, format: date }
+        direccion: { type: string }
+        telefono: { type: string }
+        correo_electronico: { type: string, format: email }
+        salario_base:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 15000000
+    UsuarioResponse:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        nombres: { type: string }
+        apellidos: { type: string }
+        fecha_nacimiento: { type: string, format: date }
+        direccion: { type: string }
+        telefono: { type: string }
+        correo_electronico: { type: string, format: email }
+        salario_base: { type: number, format: double }
+    ErrorDetalle:
+      type: object
+      required: [codigo, campo, mensaje]
+      properties:
+        codigo: { type: string }
+        campo: { type: string }
+        mensaje: { type: string }
+    ErrorResponse:
+      type: object
+      required: [errores]
+      properties:
+        errores:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorDetalle'
