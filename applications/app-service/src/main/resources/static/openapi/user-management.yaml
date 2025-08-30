@@ -1,0 +1,96 @@
+openapi: 3.0.3
+info:
+  title: User Management API
+  version: 1.0.0
+servers:
+  - url: http://localhost:8082
+paths:
+  /users:
+    post:
+      summary: Create user
+      operationId: createUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRequest'
+            examples:
+              valid:
+                value:
+                  firstName: Juan
+                  lastName: Pérez
+                  email: juan.perez@example.com
+                  documentNumber: "12345678"
+                  phoneNumber: "+51987654321"
+                  roleId: "3d78b1ee-f8e3-4178-9df4-f18d4d6cb46d"
+                  salary: 1500
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                emailInvalid:
+                  value:
+                    errors:
+                      - code: USER_EMAIL_INVALID
+                        field: email
+                        message: Formato de correo inválido
+                salaryOutOfRange:
+                  value:
+                    errors:
+                      - code: USER_SALARY_OUT_OF_RANGE
+                        field: salary
+                        message: Salario fuera de rango
+components:
+  schemas:
+    UserRequest:
+      type: object
+      required: [firstName, lastName, email, salary]
+      properties:
+        firstName: { type: string, minLength: 1 }
+        lastName:  { type: string, minLength: 1 }
+        email:     { type: string, format: email }
+        documentNumber: { type: string }
+        phoneNumber:    { type: string }
+        roleId:         { type: string, format: uuid }
+        salary:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 15000000     # <-- editable aquí; alinea con tu regla de dominio
+    UserResponse:
+      type: object
+      properties:
+        id:   { type: string, format: uuid }
+        firstName: { type: string }
+        lastName:  { type: string }
+        email:     { type: string, format: email }
+        documentNumber: { type: string }
+        phoneNumber:    { type: string }
+        roleId:         { type: string, format: uuid }
+        salary:         { type: number, format: double }
+    ErrorDetail:
+      type: object
+      required: [code, field, message]
+      properties:
+        code:    { type: string }
+        field:   { type: string }
+        message: { type: string }
+    ErrorResponse:
+      type: object
+      required: [errors]
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorDetail'
